@@ -11,6 +11,7 @@ agent_prompts = {
     "neutral": neutral_prompt
 }
 
+
 def load_model_and_tokenizer(model_id="microsoft/Phi-4-mini-instruct"):
     """
     モデルとトークナイザーを初期化して返す
@@ -20,13 +21,15 @@ def load_model_and_tokenizer(model_id="microsoft/Phi-4-mini-instruct"):
         model_id,
         torch_dtype=torch.float16,
         device_map="auto",
-        attn_implementation="flash_attention_2"
+        # attn_implementation="flash_attention_2"
     )
     model = torch.compile(model).eval()
     return model, tokenizer
 
+
 # モジュールインポート時に自動で初期化
 model, tokenizer = load_model_and_tokenizer()
+
 
 def generate_response(agent, prompt, model=model, tokenizer=tokenizer):
     """
@@ -52,5 +55,5 @@ def generate_response(agent, prompt, model=model, tokenizer=tokenizer):
         )
         output_ids = generation[0][input_len:]
     decoded = tokenizer.decode(output_ids, skip_special_tokens=True)
-    print(agent,decoded)
+    print(agent, decoded)
     return decoded
