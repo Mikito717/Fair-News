@@ -1,7 +1,8 @@
 fastapi
 uvicorn
 pydantic
-transformers
-torch
+ollama
 streamlit
 requests
+transformers
+torch
