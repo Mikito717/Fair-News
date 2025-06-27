@@ -73,12 +73,33 @@ def _create_gemini_settings() -> Tuple[Optional[GeminiArticleGenerator], dict]:
         help="Google Gemini APIキーを入力してください"
     )
     
-    model = st.selectbox(
+    # モデルの説明を追加
+    model_descriptions = {
+        "gemini-2.5-flash": "🚀 最新の高性能モデル（推奨）- 適応的思考、費用対効果",
+        "gemini-2.5-pro": "🧠 最高性能の思考モデル - 複雑な推論と分析に最適",
+        "gemini-2.5-flash-lite-preview-06-17": "⚡ 高スループット・低コスト - 大量処理向け",
+        "gemini-2.0-flash": "🌟 次世代機能・高速 - リアルタイムストリーミング対応",
+        "gemini-2.0-flash-lite": "💨 低レイテンシ・低コスト - 高速応答が必要な場合",
+        "gemini-1.5-flash": "🔄 安定版高速モデル - 汎用性の高いパフォーマンス",
+        "gemini-1.5-pro": "🎯 安定版高性能モデル - 複雑な推論タスク向け",
+        "gemini-1.5-flash-8b": "🪶 軽量モデル - 大規模でシンプルなタスク向け"
+    }
+    
+    # モデル選択の表示用リスト
+    model_options = []
+    for model in Config.GENERATORS["gemini"]["models"]:
+        description = model_descriptions.get(model, "")
+        model_options.append(f"{model} - {description}" if description else model)
+    
+    selected_option = st.selectbox(
         "AIモデル選択",
-        Config.GENERATORS["gemini"]["models"],
+        model_options,
         index=0,
-        help="使用するGeminiモデルを選択してください"
+        help="使用するGeminiモデルを選択してください。最新の2.5ファミリーが推奨です。"
     )
+    
+    # 実際のモデル名を抽出
+    model = selected_option.split(" - ")[0]
     
     generator = None
     if api_key:

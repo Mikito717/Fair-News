@@ -109,6 +109,24 @@ TEST_MODE=true streamlit run app_test.py
 - `OPENAI_API_KEY`: OpenAI APIキー
 - `OPENAI_MODEL`: 使用するモデル（推奨: gpt-4o-mini）
 
+### Gemini API設定
+
+- `GEMINI_API_KEY`: Google Gemini APIキー
+- `GEMINI_MODEL`: 使用するモデル（推奨: gemini-2.5-flash）
+
+#### 利用可能なGeminiモデル
+
+| モデル | 特徴 | 推奨用途 |
+|--------|------|----------|
+| `gemini-2.5-flash` ⭐ | 最新の高性能モデル | 一般的な記事生成（推奨） |
+| `gemini-2.5-pro` | 最高性能の思考モデル | 専門記事・複雑な内容 |
+| `gemini-2.5-flash-lite-preview-06-17` | 高スループット・低コスト | 大量生成・シンプルな記事 |
+| `gemini-2.0-flash` | 次世代機能・高速 | リアルタイム生成 |
+| `gemini-1.5-flash` | 安定版高速モデル | 安定性重視 |
+| `gemini-1.5-pro` | 安定版高性能モデル | 高品質記事 |
+
+詳細は [Geminiモデルガイド](docs/GEMINI_MODELS.md) を参照してください。
+
 ### テストモード
 
 - `TEST_MODE=true`: モック機能を使用してテスト実行

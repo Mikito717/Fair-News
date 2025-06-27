@@ -59,7 +59,16 @@ class Config:
         },
         "gemini": {
             "name": "Google Gemini",
-            "models": ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro"],
+            "models": [
+                "gemini-2.5-flash",        # 最新の高性能モデル（推奨）
+                "gemini-2.5-pro",          # 最高性能の思考モデル
+                "gemini-2.5-flash-lite-preview-06-17",  # 高スループット・低コスト
+                "gemini-2.0-flash",        # 次世代機能・高速
+                "gemini-2.0-flash-lite",   # 低レイテンシ・低コスト
+                "gemini-1.5-flash",        # 安定版高速モデル
+                "gemini-1.5-pro",          # 安定版高性能モデル
+                "gemini-1.5-flash-8b"      # 軽量モデル
+            ],
             "env_key": "GEMINI_API_KEY", 
             "model_env_key": "GEMINI_MODEL"
         }
