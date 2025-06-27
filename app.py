@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from src.generators.article_generator import ArticleGenerator
 from src.generators.gemini_generator import GeminiArticleGenerator
 from src.utils.article_manager import ArticleManager
+from config.settings import Config
 
 # 環境変数を読み込み
 load_dotenv("config/.env")
@@ -91,7 +92,7 @@ def create_sidebar():
             
             model = st.selectbox(
                 "AIモデル選択",
-                ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+                Config.GENERATORS["openai"]["models"],
                 index=0,
                 help="使用するOpenAIモデルを選択してください"
             )
@@ -105,12 +106,53 @@ def create_sidebar():
                 help="Google Gemini APIキーを入力してください"
             )
             
-            model = st.selectbox(
+            # 設定ファイルからGeminiモデルを動的に取得
+            st.markdown("**モデル選択**")
+            
+            # モデルの説明を定義
+            model_descriptions = {
+                "gemini-2.5-flash": "🚀 最新の高性能モデル（推奨）- 適応的思考、費用対効果",
+                "gemini-2.5-pro": "🧠 最高性能の思考モデル - 複雑な推論と分析に最適",
+                "gemini-2.5-flash-lite-preview-06-17": "⚡ 高スループット・低コスト - 大量処理向け",
+                "gemini-2.0-flash": "🌟 次世代機能・高速 - リアルタイムストリーミング対応",
+                "gemini-2.0-flash-lite": "💨 低レイテンシ・低コスト - 高速応答が必要な場合",
+                "gemini-1.5-flash": "🔄 安定版高速モデル - 汎用性の高いパフォーマンス",
+                "gemini-1.5-pro": "🎯 安定版高性能モデル - 複雑な推論タスク向け",
+                "gemini-1.5-flash-8b": "🪶 軽量モデル - 大規模でシンプルなタスク向け"
+            }
+            
+            # 設定ファイルからモデルリストを取得し、説明付きで表示
+            gemini_models = Config.GENERATORS["gemini"]["models"]
+            model_options = []
+            for model_name in gemini_models:
+                description = model_descriptions.get(model_name, "")
+                if description:
+                    model_options.append(f"{model_name} - {description}")
+                else:
+                    model_options.append(model_name)
+            
+            # モデル選択（設定ファイルから動的に取得）
+            selected_model_option = st.selectbox(
                 "AIモデル選択",
-                ["gemini-1.5-flash", "gemini-1.5-pro"],
+                model_options,
                 index=0,
-                help="使用するGeminiモデルを選択してください"
+                help="使用するGeminiモデルを選択してください。最新の2.5ファミリーが推奨です。"
             )
+            
+            # 実際のモデル名を抽出
+            model = selected_model_option.split(" - ")[0]
+            
+            # 選択されたモデルの詳細情報を表示
+            if "2.5-flash" in model and "lite" not in model:
+                st.info("🚀 推奨: 最新の高性能モデルです。適応的思考機能付きで、費用対効果に優れています。")
+            elif "2.5-pro" in model:
+                st.info("🧠 高性能: 複雑な推論や専門的な記事生成に最適です。")
+            elif "lite" in model:
+                st.info("⚡ 高効率: 大量生成や高速処理に適しています。")
+            elif "2.0-flash" in model:
+                st.info("🌟 次世代: 最新技術を活用したリアルタイム処理に対応。")
+            elif "1.5" in model:
+                st.info("🔄 安定版: 実績のある安定したモデルです。")
         
         # APIキー検証
         if st.button("🔍 APIキー検証"):

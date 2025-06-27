@@ -13,5 +13,19 @@
     "updated_at": "2025-06-27T05:56:45.242150",
     "word_count": 760,
     "status": "draft"
+  },
+  "20250628_003019": {
+    "theme": "人工知能のこれからについて",
+    "article_type": "ブログ記事",
+    "tone": "フォーマル",
+    "word_count": 2262,
+    "include_seo": true,
+    "tags": "",
+    "generated_at": "2025-06-28 00:29:21",
+    "filename": "article_20250628_003019.md",
+    "id": "20250628_003019",
+    "created_at": "2025-06-28T00:30:19.294695",
+    "updated_at": "2025-06-28T00:30:19.294706",
+    "status": "draft"
   }
 }
