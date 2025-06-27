@@ -1,132 +1,160 @@
-# Fair-News
+# AI自動コンテンツ生成システム
 
-このリポジトリは、ニュース記事のバイアス判定を行うWebアプリケーションです。複数のAIモデルバックエンド（OllamaおよびTransformers）をサポートしています。
+Streamlitを使用したAI自動コンテンツ生成システムです。OpenAI APIを活用して、ブログ記事やニュース記事を自動生成し、管理することができます。
 
-## 特徴
-- 🔄 **マルチバックエンド対応**: OllamaとTransformersの両方をサポート
-- 🎯 **3つの視点**: リベラル、保守的、中立的な視点からの分析
-- 🌐 **リアルタイムスイッチング**: フロントエンドからバックエンドを切り替え可能
-- 📊 **詳細な分析**: バイアススコアと詳細な要約を提供
+## 🚀 主な機能
 
-## 構成
-- **backend**: FastAPIによるAPIサーバ（OllamaおよびTransformers対応）
-- **frontend**: Streamlitによるフロントエンド
+### 📝 記事生成機能
+- テーマやキーワードに基づいた記事の自動生成
+- 記事の種類（ブログ記事、ニュース記事、解説記事など）の選択
+- 記事のトーン（フォーマル、カジュアル、専門的など）の調整
+- 文字数の指定（300〜3000文字）
+- SEO要素の自動組み込み
 
-## 使い方
+### 📚 記事管理機能
+- 生成した記事の保存と管理
+- 記事の検索機能
+- 記事の編集と更新
+- 記事の削除機能
+- Markdownファイルとしてのダウンロード
 
-### 1. モデルバックエンドの準備
+### 📊 統計情報
+- 総記事数、総文字数、平均文字数の表示
+- 記事タイプ別の分布グラフ
+- 月別記事数の推移
 
-#### Option A: Ollama（推奨）
-```bash
-# macOSの場合
-brew install ollama
+### 🔧 高度な機能
+- タイトル候補の生成
+- 記事構成の生成
+- 設定のエクスポート/インポート
 
-# または公式サイトからダウンロード: https://ollama.ai
-```
+## 📋 必要な環境
 
-Ollamaを起動し、必要なモデルをダウンロード：
-```bash
-ollama serve  # バックグラウンドで起動
-ollama pull llama3.2  # 日本語対応モデル
-ollama pull qwen2.5   # その他のモデル（オプション）
-```
+- Python 3.11以上
+- OpenAI APIキー（実際の使用時）
 
-#### Option B: Transformers（ローカルGPU使用）
-GPU環境での使用を推奨。以下のモデルなどが利用可能：
-- `rinna/japanese-gpt-neox-3.6b-instruction-sft`
-- その他のHugging Faceモデル
+## 🛠️ インストールと実行
 
-### 2. 必要なライブラリのインストール
+### 1. 依存関係のインストール
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. バックエンド（FastAPIサーバ）の起動
+### 2. 環境変数の設定
+
+`.env.example`ファイルを`.env`にコピーし、OpenAI APIキーを設定してください：
 
 ```bash
-cd backend
-uvicorn main:app --reload
+cp .env.example .env
 ```
 
-### 4. フロントエンド（Streamlitアプリ）の起動
+`.env`ファイルを編集：
+```
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=gpt-4o-mini
+```
 
-別ターミナルで以下を実行：
+### 3. アプリケーションの実行
 
+#### 通常モード（OpenAI API使用）
 ```bash
-cd frontend
 streamlit run app.py
 ```
 
-### 5. ブラウザでアクセス
-
-Streamlitの指示に従い、表示されたURLにアクセスしてください。
-
-## API仕様
-
-### エンドポイント
-
-#### `GET /api/v1/status`
-システムの状態と利用可能なバックエンドを返します。
-
-#### `POST /api/v1/switch-backend`
-モデルバックエンドを切り替えます。
-```json
-{
-  "backend": "ollama",  // "ollama" or "transformers"
-  "model_name": "llama3.2"  // オプション
-}
-```
-
-#### `POST /api/v1/judge`
-ニュース記事を分析します。
-```json
-{
-  "article": "分析したいニュース記事",
-  "backend": "ollama",    // オプション（一時的な切り替え）
-  "model_name": "llama3.2"  // オプション
-}
-```
-
-## バックエンドの特徴
-
-### Ollama
-- ✅ **軽量**: システムリソースの使用量が少ない
-- ✅ **簡単**: インストールと管理が簡単
-- ✅ **多言語対応**: 日本語対応モデルが豊富
-- ⚠️ **ネットワーク**: 初回モデルダウンロード時にインターネット接続が必要
-
-### Transformers
-- ✅ **高精度**: より高度なモデルが利用可能
-- ✅ **カスタマイズ**: 細かいパラメータ調整が可能
-- ⚠️ **リソース**: GPUまたは高性能CPUが推奨
-- ⚠️ **初期化**: モデル読み込みに時間がかかる場合がある
-
-## トラブルシューティング
-
-### Ollamaモデルが見つからない場合
+#### テストモード（モック機能使用）
 ```bash
-ollama list  # インストール済みモデルを確認
-ollama pull llama3.2  # モデルをダウンロード
+TEST_MODE=true streamlit run app_test.py
 ```
 
-### Transformersでメモリ不足の場合
-- より小さなモデルを使用
-- `torch_dtype=torch.float16`による精度低下で対応
+アプリケーションは `http://localhost:8501` で利用できます。
 
-### ポート競合の場合
+## 📁 プロジェクト構造
+
+```
+streamlit_ai_content_generator/
+├── app.py                    # メインアプリケーション
+├── app_test.py              # テスト用アプリケーション
+├── article_generator.py     # AI記事生成機能
+├── article_manager.py       # 記事管理機能
+├── prompts.py              # プロンプト管理
+├── mock_generator.py       # テスト用モック機能
+├── requirements.txt        # 依存関係
+├── .env.example           # 環境変数テンプレート
+├── .env                   # 環境変数（実際の設定）
+├── todo.md               # 開発タスク管理
+├── E2E_TEST_REPORT.md    # E2Eテスト結果
+├── README.md             # このファイル
+└── saved_articles/       # 保存された記事（自動作成）
+```
+
+## 🧪 テスト
+
+### E2Eテストの実行
+
+テストモードでアプリケーションを起動し、ブラウザで動作確認を行ってください：
+
 ```bash
-# バックエンドのポートを変更
-uvicorn main:app --port 8001
-
-# フロントエンドのポートを変更
-streamlit run app.py --server.port 8502
+TEST_MODE=true streamlit run app_test.py
 ```
 
-## 注意事項
-- Ollamaとモデルがインストールされている必要があります。
-- Ollamaサーバーが起動している必要があります（`ollama serve`）。
-- 使用するモデルによってメモリ使用量が変わります。
+テスト用APIキー: `test_key_for_demo`
 
-## 開発者
-- GitHub: https://github.com/Mikito717/Fair-News
+詳細なテスト結果は `E2E_TEST_REPORT.md` を参照してください。
+
+## 🔧 設定
+
+### OpenAI API設定
+
+- `OPENAI_API_KEY`: OpenAI APIキー
+- `OPENAI_MODEL`: 使用するモデル（推奨: gpt-4o-mini）
+
+### テストモード
+
+- `TEST_MODE=true`: モック機能を使用してテスト実行
+
+## 📖 使用方法
+
+### 1. 記事生成
+1. サイドバーでOpenAI APIキーを設定
+2. 記事のテーマやキーワードを入力
+3. 記事の種類、トーン、文字数を選択
+4. 「記事を生成」ボタンをクリック
+5. 生成された記事を確認・編集
+6. 「記事を保存」で保存
+
+### 2. 記事管理
+1. 「記事管理」タブに移動
+2. 保存された記事の一覧を確認
+3. 検索機能で特定の記事を検索
+4. 記事の表示、編集、削除が可能
+
+### 3. 統計情報
+1. 「統計情報」タブに移動
+2. 記事数や文字数の統計を確認
+3. グラフで記事の分布を視覚化
+
+## 🚨 注意事項
+
+- OpenAI APIの使用には料金が発生します
+- APIキーは安全に管理してください
+- 生成された記事の内容は必ず確認してから使用してください
+- テストモードでは実際のAPIは使用されません
+
+## 📝 ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。
+
+## 🤝 貢献
+
+バグ報告や機能要望は、GitHubのIssueでお知らせください。
+
+## 📞 サポート
+
+質問や問題がある場合は、プロジェクトのドキュメントを参照するか、開発者にお問い合わせください。
+
+---
+
+**バージョン**: 1.0.0  
+**最終更新**: 2025年6月27日
+

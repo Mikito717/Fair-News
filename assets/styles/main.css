@@ -1,0 +1,139 @@
+/* Fair News - カスタムCSS */
+
+.main-header {
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #1f77b4;
+}
+
+.metric-card {
+    background-color: #f0f2f6;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid #1f77b4;
+}
+
+.success-message {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #c3e6cb;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #f5c6cb;
+}
+
+.info-message {
+    background-color: #cce8f4;
+    color: #055160;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #b6e2f0;
+}
+
+.sidebar-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1f77b4;
+    margin-bottom: 1rem;
+}
+
+.article-preview {
+    background-color: #ffffff;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.article-metadata {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+}
+
+.search-box {
+    margin-bottom: 1.5rem;
+}
+
+.filter-section {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-container {
+    background-color: #ffffff;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.settings-section {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.download-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    display: inline-block;
+    margin: 0.25rem;
+}
+
+.download-button:hover {
+    background-color: #218838;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+    .main-header {
+        font-size: 2rem;
+    }
+    
+    .metric-card {
+        margin-bottom: 1rem;
+    }
+    
+    .article-preview {
+        padding: 1rem;
+    }
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    .metric-card {
+        background-color: #2c3e50;
+        color: #ecf0f1;
+    }
+    
+    .article-preview {
+        background-color: #34495e;
+        color: #ecf0f1;
+        border-color: #546e7a;
+    }
+    
+    .filter-section,
+    .settings-section {
+        background-color: #2c3e50;
+    }
+}

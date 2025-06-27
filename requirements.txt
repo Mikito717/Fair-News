@@ -1,8 +1,6 @@
-fastapi
-uvicorn
-pydantic
-ollama
-streamlit
-requests
-transformers
-torch
+streamlit==1.46.1
+openai==1.92.2
+python-dotenv==1.1.1
+google-generativeai==0.8.5
+plotly==5.17.0
+pandas==2.1.4
