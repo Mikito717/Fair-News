@@ -1,3 +1,8 @@
+from config.settings import Config
+from src.utils.article_manager import ArticleManager
+from src.generators.deep_research_generator import DeepResearchArticleGenerator
+from src.generators.gemini_generator import GeminiArticleGenerator
+from src.generators.article_generator import ArticleGenerator
 import streamlit as st
 import os
 import sys
@@ -9,10 +14,6 @@ from dotenv import load_dotenv
 # プロジェクトルートをPythonパスに追加
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.generators.article_generator import ArticleGenerator
-from src.generators.gemini_generator import GeminiArticleGenerator
-from src.utils.article_manager import ArticleManager
-from config.settings import Config
 
 # 環境変数を読み込み
 load_dotenv("config/.env")
@@ -58,6 +59,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
 def initialize_session_state():
     """セッション状態の初期化"""
     if 'generated_article' not in st.session_state:
@@ -69,19 +71,35 @@ def initialize_session_state():
     if 'current_generator' not in st.session_state:
         st.session_state.current_generator = None
 
+
 def create_sidebar():
     """サイドバーの作成"""
     with st.sidebar:
         st.header("⚙️ 設定")
-        
+
         # AIプロバイダー選択
         ai_provider = st.selectbox(
             "AIプロバイダー",
-            ["OpenAI", "Gemini"],
-            help="使用するAIサービスを選択してください"
+            ["ディープリサーチ (推奨)", "OpenAI", "Gemini"],
+            help="使用するAIサービスを選択してください。ディープリサーチはGemini + LangGraphを使用します。"
         )
-        
-        if ai_provider == "OpenAI":
+
+        if ai_provider == "ディープリサーチ (推奨)":
+            # ディープリサーチ設定
+            st.markdown("**🔍 ディープリサーチモード**")
+            st.info("最新情報をWeb検索し、その結果をもとに記事を生成します")
+
+            # Gemini APIキー（リサーチ用）
+            api_key = st.text_input(
+                "Gemini APIキー (リサーチ用)",
+                type="password",
+                value=os.getenv("GEMINI_API_KEY", ""),
+                help="Web検索とリサーチに使用されます"
+            )
+
+            model = "gemini-2.0-flash"  # ディープリサーチ用のデフォルトモデル
+
+        elif ai_provider == "OpenAI":
             # OpenAI設定
             api_key = st.text_input(
                 "OpenAI APIキー",
@@ -89,14 +107,14 @@ def create_sidebar():
                 value=os.getenv("OPENAI_API_KEY", ""),
                 help="OpenAI APIキーを入力してください"
             )
-            
+
             model = st.selectbox(
                 "AIモデル選択",
                 Config.GENERATORS["openai"]["models"],
                 index=0,
                 help="使用するOpenAIモデルを選択してください"
             )
-            
+
         else:  # Gemini
             # Gemini設定
             api_key = st.text_input(
@@ -105,10 +123,10 @@ def create_sidebar():
                 value=os.getenv("GEMINI_API_KEY", ""),
                 help="Google Gemini APIキーを入力してください"
             )
-            
+
             # 設定ファイルからGeminiモデルを動的に取得
             st.markdown("**モデル選択**")
-            
+
             # モデルの説明を定義
             model_descriptions = {
                 "gemini-2.5-flash": "🚀 最新の高性能モデル（推奨）- 適応的思考、費用対効果",
@@ -120,7 +138,7 @@ def create_sidebar():
                 "gemini-1.5-pro": "🎯 安定版高性能モデル - 複雑な推論タスク向け",
                 "gemini-1.5-flash-8b": "🪶 軽量モデル - 大規模でシンプルなタスク向け"
             }
-            
+
             # 設定ファイルからモデルリストを取得し、説明付きで表示
             gemini_models = Config.GENERATORS["gemini"]["models"]
             model_options = []
@@ -130,7 +148,7 @@ def create_sidebar():
                     model_options.append(f"{model_name} - {description}")
                 else:
                     model_options.append(model_name)
-            
+
             # モデル選択（設定ファイルから動的に取得）
             selected_model_option = st.selectbox(
                 "AIモデル選択",
@@ -138,10 +156,10 @@ def create_sidebar():
                 index=0,
                 help="使用するGeminiモデルを選択してください。最新の2.5ファミリーが推奨です。"
             )
-            
+
             # 実際のモデル名を抽出
             model = selected_model_option.split(" - ")[0]
-            
+
             # 選択されたモデルの詳細情報を表示
             if "2.5-flash" in model and "lite" not in model:
                 st.info("🚀 推奨: 最新の高性能モデルです。適応的思考機能付きで、費用対効果に優れています。")
@@ -153,62 +171,91 @@ def create_sidebar():
                 st.info("🌟 次世代: 最新技術を活用したリアルタイム処理に対応。")
             elif "1.5" in model:
                 st.info("🔄 安定版: 実績のある安定したモデルです。")
-        
+
         # APIキー検証
         if st.button("🔍 APIキー検証"):
             if api_key:
                 try:
-                    if ai_provider == "OpenAI":
+                    if ai_provider == "ディープリサーチ (推奨)":
+                        generator = DeepResearchArticleGenerator(
+                            openai_api_key=None,
+                            gemini_api_key=api_key
+                        )
+                        # 簡単な検証
+                        if generator.is_research_available():
+                            st.success("✅ Gemini APIキーが有効です（ディープリサーチ対応）")
+                            st.session_state.api_validated = True
+                            st.session_state.current_generator = generator
+                        else:
+                            st.error("❌ ディープリサーチ機能の初期化に失敗しました")
+                            st.session_state.api_validated = False
+                            st.session_state.current_generator = None
+                    elif ai_provider == "OpenAI":
                         generator = ArticleGenerator(api_key, model)
+                        is_valid, message = generator.validate_api_key()
+                        if is_valid:
+                            st.success(message)
+                            st.session_state.api_validated = True
+                            st.session_state.current_generator = generator
+                        else:
+                            st.error(message)
+                            st.session_state.api_validated = False
+                            st.session_state.current_generator = None
                     else:
                         generator = GeminiArticleGenerator(api_key, model)
-                    
-                    is_valid, message = generator.validate_api_key()
-                    if is_valid:
-                        st.success(message)
-                        st.session_state.api_validated = True
-                        st.session_state.current_generator = generator
-                    else:
-                        st.error(message)
-                        st.session_state.api_validated = False
-                        st.session_state.current_generator = None
+                        is_valid, message = generator.validate_api_key()
+                        if is_valid:
+                            st.success(message)
+                            st.session_state.api_validated = True
+                            st.session_state.current_generator = generator
+                        else:
+                            st.error(message)
+                            st.session_state.api_validated = False
+                            st.session_state.current_generator = None
                 except Exception as e:
                     st.error(f"APIキー検証エラー: {str(e)}")
                     st.session_state.api_validated = False
                     st.session_state.current_generator = None
             else:
                 st.warning("APIキーを入力してください")
-        
+
         # 現在の設定表示
         if st.session_state.api_validated:
             st.success(f"✅ {ai_provider} APIキーが有効です")
-        
+
         return ai_provider, api_key, model
 
-def create_article_generation_tab():
+
+def create_article_generation_tab(ai_provider):
     """記事生成タブの作成"""
     st.header("🎯 記事生成")
-    
+
+    if "ディープリサーチ" in ai_provider:
+        st.info("🔍 最新情報をWeb検索し、その結果をもとに高品質な記事を生成します")
+
     col1, col2 = st.columns([2, 1])
-    
+
     with col1:
         # 記事設定
+        label = "検索クエリ" if "ディープリサーチ" in ai_provider else "記事のテーマまたはキーワード"
+        placeholder = "例: 2024年最新のAI技術動向" if "ディープリサーチ" in ai_provider else "例: 人工知能の未来、健康的な食事、..."
+
         theme = st.text_input(
-            "記事のテーマまたはキーワード",
+            label,
             value="人工知能の活用方法",
-            placeholder="例: 人工知能の未来、健康的な食事、..."
+            placeholder=placeholder
         )
-        
+
         article_type = st.selectbox(
             "記事の種類",
             ["ブログ記事", "ニュース記事", "解説記事", "レビュー記事", "ハウツー記事"]
         )
-        
+
         tone = st.selectbox(
             "記事のトーン",
             ["フォーマル", "カジュアル", "専門的", "親しみやすい", "説得力のある"]
         )
-    
+
     with col2:
         word_count = st.slider(
             "記事の文字数（目安）",
@@ -217,95 +264,143 @@ def create_article_generation_tab():
             value=1000,
             step=100
         )
-        
+
         include_seo = st.checkbox("SEO要素を含める", value=True)
-        
+
         tags = st.text_input(
             "タグ（カンマ区切り）",
             placeholder="例: AI, 技術, 未来"
         )
-    
+
     # 記事生成ボタン
     col1, col2 = st.columns(2)
-    
+
     with col1:
-        if st.button("🚀 記事を生成", type="primary"):
+        button_text = "🚀 リサーチして記事を生成" if "ディープリサーチ" in ai_provider else "🚀 記事を生成"
+        if st.button(button_text, type="primary"):
             if not st.session_state.api_validated or not st.session_state.current_generator:
                 st.error("まずAPIキーを設定し、検証してください")
                 return
-            
+
             if not theme.strip():
-                st.error("記事のテーマを入力してください")
+                label = "検索クエリ" if "ディープリサーチ" in ai_provider else "記事のテーマ"
+                st.error(f"{label}を入力してください")
                 return
-            
-            with st.spinner("記事を生成中..."):
-                success, content, error = st.session_state.current_generator.generate_article(
-                    theme, article_type, tone, word_count, include_seo
-                )
-                
-                if success:
-                    st.session_state.generated_article = content
-                    st.session_state.article_metadata = {
-                        "theme": theme,
-                        "article_type": article_type,
-                        "tone": tone,
-                        "word_count": len(content),
-                        "include_seo": include_seo,
-                        "tags": tags,
-                        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    }
-                    st.success("記事生成が完了しました！")
+
+            spinner_text = "リサーチして記事を生成中..." if "ディープリサーチ" in ai_provider else "記事を生成中..."
+            with st.spinner(spinner_text):
+                # ディープリサーチ機能を使用する場合
+                if "ディープリサーチ" in ai_provider and isinstance(st.session_state.current_generator, DeepResearchArticleGenerator):
+                    result = st.session_state.current_generator.generate_researched_article(
+                        query=theme,
+                        article_type=article_type,
+                        tone=tone,
+                        word_count=word_count,
+                        include_seo=include_seo,
+                        max_research_loops=2,
+                        number_of_initial_queries=3,
+                        generator_type="gemini"
+                    )
+
+                    if result["success"]:
+                        st.session_state.generated_article = result["content"]
+                        st.session_state.article_metadata = {
+                            "theme": theme,
+                            "article_type": article_type,
+                            "tone": tone,
+                            "word_count": len(result["content"]),
+                            "include_seo": include_seo,
+                            "tags": tags,
+                            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "research_data": result.get("research_data", {}),
+                            "is_deep_research": True
+                        }
+                        st.success("ディープリサーチ記事が正常に生成されました！")
+
+                        # リサーチサマリーを表示
+                        if result.get("research_data"):
+                            with st.expander("🔍 リサーチサマリーを表示", expanded=False):
+                                research_summary = st.session_state.current_generator.get_research_summary(
+                                    result["research_data"])
+                                st.markdown(research_summary)
+                    else:
+                        st.error(
+                            f"ディープリサーチ記事生成に失敗しました: {result.get('error', '不明なエラー')}")
+
                 else:
-                    st.error(f"記事生成に失敗しました: {content}")
-                    if error:
-                        st.error(f"詳細: {error}")
-    
+                    # 従来の記事生成
+                    success, content, error = st.session_state.current_generator.generate_article(
+                        theme, article_type, tone, word_count, include_seo
+                    )
+
+                    if success:
+                        st.session_state.generated_article = content
+                        st.session_state.article_metadata = {
+                            "theme": theme,
+                            "article_type": article_type,
+                            "tone": tone,
+                            "word_count": len(content),
+                            "include_seo": include_seo,
+                            "tags": tags,
+                            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "is_deep_research": False
+                        }
+                        st.success("記事生成が完了しました！")
+                    else:
+                        st.error(f"記事生成に失敗しました: {content}")
+                        if error:
+                            st.error(f"詳細: {error}")
+
     with col2:
         if st.button("📋 構成を生成"):
             if not st.session_state.api_validated or not st.session_state.current_generator:
                 st.error("まずAPIキーを設定し、検証してください")
                 return
-            
+
             if not theme.strip():
                 st.error("記事のテーマを入力してください")
                 return
-            
+
             with st.spinner("構成を生成中..."):
                 success, outline, error = st.session_state.current_generator.generate_outline(
                     theme, article_type, tone
                 )
-                
+
                 if success:
                     st.subheader("📋 生成された記事構成")
                     st.markdown(outline)
                 else:
                     st.error(f"構成生成に失敗しました: {outline}")
 
+
 def create_generated_article_section():
     """生成された記事セクションの作成"""
     if st.session_state.generated_article:
         st.header("📄 生成された記事")
-        
+
         # メタデータ表示
         if st.session_state.article_metadata:
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.info(f"**テーマ**: {st.session_state.article_metadata.get('theme', 'N/A')}")
+                st.info(
+                    f"**テーマ**: {st.session_state.article_metadata.get('theme', 'N/A')}")
             with col2:
-                st.info(f"**生成時刻**: {st.session_state.article_metadata.get('generated_at', 'N/A')}")
+                st.info(
+                    f"**生成時刻**: {st.session_state.article_metadata.get('generated_at', 'N/A')}")
             with col3:
-                st.info(f"**文字数**: {st.session_state.article_metadata.get('word_count', 0)}文字")
-        
+                st.info(
+                    f"**文字数**: {st.session_state.article_metadata.get('word_count', 0)}文字")
+
         # 記事内容（編集可能）
         edited_article = st.text_area(
             "記事内容（編集可能）",
             value=st.session_state.generated_article,
             height=400
         )
-        
+
         # 記事保存・ダウンロードボタン
         col1, col2 = st.columns(2)
-        
+
         with col1:
             if st.button("💾 記事を保存"):
                 manager = ArticleManager()
@@ -317,7 +412,7 @@ def create_generated_article_section():
                     st.success(f"記事が保存されました: {filename}")
                 else:
                     st.error("記事の保存に失敗しました")
-        
+
         with col2:
             st.download_button(
                 label="📥 ダウンロード",
@@ -326,12 +421,13 @@ def create_generated_article_section():
                 mime="text/markdown"
             )
 
+
 def create_article_management_tab():
     """記事管理タブの作成"""
     st.header("📚 記事管理")
-    
+
     manager = ArticleManager()
-    
+
     # 検索機能
     col1, col2 = st.columns([3, 1])
     with col1:
@@ -339,27 +435,28 @@ def create_article_management_tab():
     with col2:
         if st.button("検索"):
             pass  # 検索ロジックは後で実装
-    
+
     # 記事一覧
     articles = manager.list_articles()
-    
+
     if articles:
         st.subheader(f"📄 全記事 ({len(articles)}件)")
-        
+
         for article in articles:
             with st.expander(f"📄 {article['theme']} ({article['created_at'][:10]})"):
                 col1, col2, col3 = st.columns([2, 1, 1])
-                
+
                 with col1:
                     st.write(f"**種類**: {article.get('article_type', 'N/A')}")
                     st.write(f"**トーン**: {article.get('tone', 'N/A')}")
                     st.write(f"**文字数**: {article.get('word_count', 0)}文字")
                     if article.get('tags'):
                         st.write(f"**タグ**: {article['tags']}")
-                
+
                 with col2:
                     if st.button(f"👁️ 表示", key=f"view_{article['id']}"):
-                        success, content, _ = manager.load_article(article['id'])
+                        success, content, _ = manager.load_article(
+                            article['id'])
                         if success:
                             st.text_area(
                                 "記事内容",
@@ -369,7 +466,7 @@ def create_article_management_tab():
                             )
                         else:
                             st.error("記事の読み込みに失敗しました")
-                
+
                 with col3:
                     if st.button(f"🗑️ 削除", key=f"delete_{article['id']}"):
                         if manager.delete_article(article['id']):
@@ -380,28 +477,30 @@ def create_article_management_tab():
     else:
         st.info("保存された記事がありません")
 
+
 def create_statistics_tab():
     """統計情報タブの作成"""
     st.header("📊 統計情報")
-    
+
     manager = ArticleManager()
     articles = manager.list_articles()
-    
+
     if articles:
         # 基本統計
         total_articles = len(articles)
         total_words = sum(article.get('word_count', 0) for article in articles)
         avg_words = total_words // total_articles if total_articles > 0 else 0
-        
+
         # 記事タイプの集計
         article_types = {}
         for article in articles:
             article_type = article.get('article_type', 'その他')
-            article_types[article_type] = article_types.get(article_type, 0) + 1
-        
+            article_types[article_type] = article_types.get(
+                article_type, 0) + 1
+
         # メトリクス表示
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             st.metric("総記事数", total_articles)
         with col2:
@@ -410,29 +509,31 @@ def create_statistics_tab():
             st.metric("平均文字数", avg_words)
         with col4:
             st.metric("記事タイプ数", len(article_types))
-        
+
         # 記事タイプ別分布グラフ
         if article_types:
             st.subheader("📈 記事タイプ別分布")
-            df = pd.DataFrame(list(article_types.items()), columns=['記事タイプ', '記事数'])
+            df = pd.DataFrame(list(article_types.items()),
+                              columns=['記事タイプ', '記事数'])
             fig = px.bar(df, x='記事タイプ', y='記事数', title="記事タイプ別分布")
             st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("統計情報を表示するには、まず記事を生成してください")
 
+
 def create_advanced_features_tab():
     """高度な機能タブの作成"""
     st.header("🔧 高度な機能")
-    
+
     # タイトル生成機能
     st.subheader("💡 タイトル候補生成")
-    
+
     col1, col2 = st.columns([2, 1])
-    
+
     with col1:
         title_theme = st.text_input("テーマ", placeholder="記事のテーマを入力")
         title_type = st.selectbox("記事タイプ", ["ブログ記事", "ニュース記事", "解説記事"])
-    
+
     with col2:
         if st.button("🎯 タイトル生成"):
             if not st.session_state.api_validated or not st.session_state.current_generator:
@@ -444,20 +545,20 @@ def create_advanced_features_tab():
                     success, titles, error = st.session_state.current_generator.generate_titles(
                         title_theme, title_type
                     )
-                    
+
                     if success:
                         st.subheader("💡 生成されたタイトル候補")
                         st.markdown(titles)
                     else:
                         st.error(f"タイトル生成に失敗しました: {titles}")
-    
+
     st.divider()
-    
+
     # 設定のエクスポート/インポート
     st.subheader("⚙️ 設定管理")
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         if st.button("📤 設定をエクスポート"):
             settings = {
@@ -472,39 +573,41 @@ def create_advanced_features_tab():
                 file_name="ai_content_generator_settings.json",
                 mime="application/json"
             )
-    
+
     with col2:
         uploaded_file = st.file_uploader("📥 設定をインポート", type=['json'])
         if uploaded_file is not None:
             st.success("設定ファイルがアップロードされました")
 
+
 def main():
     """メイン関数"""
     # セッション状態の初期化
     initialize_session_state()
-    
+
     # ヘッダー
-    st.markdown('<h1 class="main-header">📝 AI自動コンテンツ生成システム</h1>', unsafe_allow_html=True)
-    
+    st.markdown('<h1 class="main-header">📝 AI自動コンテンツ生成システム</h1>',
+                unsafe_allow_html=True)
+
     # サイドバー
     ai_provider, api_key, model = create_sidebar()
-    
+
     # メインコンテンツ
     tab1, tab2, tab3, tab4 = st.tabs(["🎯 記事生成", "📚 記事管理", "📊 統計情報", "🔧 高度な機能"])
-    
+
     with tab1:
-        create_article_generation_tab()
+        create_article_generation_tab(ai_provider)
         create_generated_article_section()
-    
+
     with tab2:
         create_article_management_tab()
-    
+
     with tab3:
         create_statistics_tab()
-    
+
     with tab4:
         create_advanced_features_tab()
-    
+
     # フッター
     st.divider()
     st.markdown(
@@ -515,6 +618,6 @@ def main():
         unsafe_allow_html=True
     )
 
+
 if __name__ == "__main__":
     main()
-
